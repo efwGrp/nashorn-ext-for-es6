@@ -83,3 +83,17 @@ var f = async(function(){
 var ret=await(f);
 java.lang.System.out.println(new Date()+" The await return value is : "+ret);
 ```
+The sample to creat pdf using pdf-lib.
+Besure your nashorn is 15.4 or later. To run the sample in JDK8 will be error.
+You can download pdf-lib.min.js from https://pdf-lib.js.org/ or
+https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js.
+```Javascript
+load("nashorn-ext-for-es6.min.js");
+load("pdf-lib.min.js");
+var pdfDoc=await(PDFLib.PDFDocument.create());
+var page = pdfDoc.addPage([350, 400]);
+page.moveTo(110, 200);
+page.drawText("Hello World!");
+var pdfDataUri=await(pdfDoc.saveAsBase64({ dataUri: true }));
+java.lang.System.out.println(pdfDataUri);
+```
