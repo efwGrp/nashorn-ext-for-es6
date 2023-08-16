@@ -1,26 +1,10 @@
-/******************************************************************************
+/****************************
 MIT License
 
-Copyright (c) 2023 efw group
+Copyright (c) 2023 efwGrp
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-******************************************************************************/
+https://github.com/efwGrp/nashorn-ext-for-es6
+****************************/
 "use strict";
 ///////////////////////////////////////////////////////////////////////////////
 /**
@@ -34,7 +18,7 @@ if (Math.log10==null){
 	Object.defineProperty(Math, "log10", {enumerable: false});
 }
 /**
-The Math.log() static method returns the natural logarithm (base e) of a number.
+The Math.log2() static method returns the base 2 logarithm of a number. 
 ECMAScript 2015
 */
 if (Math.log2==null){
@@ -238,9 +222,9 @@ if (Math.clz32==null){
 The Number.EPSILON static data property represents the difference between 1 and the smallest floating point number greater than 1.
 ECMAScript 2015
 */
-if (Math.EPSILON==null){
+if (Number.EPSILON==null){
 	Number.EPSILON=2.2204460492503130808472633361816E-16;
-	Object.defineProperty(Math, "EPSILON", {enumerable: false});
+	Object.defineProperty(Number, "EPSILON", {enumerable: false});
 }
 /**
 The Number.isFinite() static method determines whether the passed value is a finite number.
@@ -589,8 +573,10 @@ if (Object.getOwnPropertyDescriptors==null){
 The Array.from() static method creates a new, shallow-copied Array instance from an iterable or array-like object.
 ECMAScript 2015
 */
-if (Array.from==null && Symbol!=null){
-	eval("Array.from=function(r){var u=arguments[1],e=arguments[2],l=[];for(var n of r)null!=u?null!=e?l.push(u.call(e,n)):l.push(u(n)):l.push(n);return l},Object.defineProperty(Array,\"from\",{enumerable:!1});")
+if (Array.from==null){
+	try{
+		eval("Array.from=function(r){var u=arguments[1],e=arguments[2],l=[];for(var n of r)null!=u?null!=e?l.push(u.call(e,n)):l.push(u(n)):l.push(n);return l},Object.defineProperty(Array,\"from\",{enumerable:!1});")
+	}catch(e){java.lang.System.out.println("Nashorn15.4 is required for Array.from implementation.");}
 }
 /**
 The entries() method of Array instances returns a new array iterator object that contains the key/value pairs for each index in the array.
@@ -608,15 +594,19 @@ ECMAScript 2015. Implemented from nashorn15.4.
 The flat() method of Array instances creates a new array with all sub-array elements concatenated into it recursively up to the specified depth.
 ECMAScript 2015
 */
-if (Array.prototype.flat==null && Symbol!=null){
-	eval("Array.prototype.flat=function(r){var t=[];for(var e of(null==r&&(r=1),this))Array.isArray(e)&&r>0?t=t.concat(e.flat(r-1)):t.push(e);return t},Object.defineProperty(Array.prototype,\"flat\",{enumerable:!1});");
+if (Array.prototype.flat==null){
+	try{
+		eval("Array.prototype.flat=function(r){var t=[];for(var e of(null==r&&(r=1),this))Array.isArray(e)&&r>0?t=t.concat(e.flat(r-1)):t.push(e);return t},Object.defineProperty(Array.prototype,\"flat\",{enumerable:!1});");
+	}catch(e){java.lang.System.out.println("Nashorn15.4 is required for Array.prototype.flat implementation.");}
 }
 /**
 The Object.entries() static method returns an array of a given object's own enumerable string-keyed property key-value pairs.
 ECMAScript 2017
 */
-if (Object.entries==null && Symbol!=null){
-	eval("Object.entries=function(e){var r,t=Object.keys(e);return{[Symbol.iterator](){return this},next:()=>void 0!==(r=t.shift())?{value:[r,e[r]]}:{done:!0}}},Object.defineProperty(Object,\"entries\",{enumerable:!1});");
+if (Object.entries==null){
+	try{
+		eval("Object.entries=function(e){var r,t=Object.keys(e);return{[Symbol.iterator](){return this},next:()=>void 0!==(r=t.shift())?{value:[r,e[r]]}:{done:!0}}},Object.defineProperty(Object,\"entries\",{enumerable:!1});");
+	}catch(e){java.lang.System.out.println("Nashorn15.4 is required for Object.entries implementation.");}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -684,8 +674,8 @@ Referenced from https://stackoverflow.com/questions/23772801/basic-javascript-pr
 			this.state = 'fulfilled'; // 2.1.1.1: can transition
 			this.value = value; // 2.1.2.2: must have a value
 			this.broadcast();
-		}	
-
+		}
+		//Returns a promise that is rejected with the given reason.
 		Promise.prototype.reject = function (reason) {
 			if (this.state !== 'pending') return; // 2.1.2.1, 2.1.3.1: cannot transition anymore
 			this.state = 'rejected'; // 2.1.1.1: can transition
@@ -693,7 +683,7 @@ Referenced from https://stackoverflow.com/questions/23772801/basic-javascript-pr
 			this.broadcast();
 		}
 
-		// A promise’s then method accepts two arguments:
+		// A promise then method accepts two arguments:
 		Promise.prototype.then = function(onFulfilled, onRejected) {
 			var consumer = new Promise(function () {});
 			// 2.2.1.1 ignore onFulfilled if not a function
@@ -707,7 +697,11 @@ Referenced from https://stackoverflow.com/questions/23772801/basic-javascript-pr
 			// 2.2.7: .then() must return a promise
 			return consumer;
 		};
-
+		//catch metod is equival to calling Promise.prototype.then(undefined, onRejected)
+		Promise.prototype["catch"] = function(onRejected){
+			return this.then(null, onRejected);
+		}
+		/////////////////////////////////////
 		Promise.prototype.broadcast = function() {
 			var promise = this;
 			// 2.2.2.1, 2.2.2.2, 2.2.3.1, 2.2.3.2 called after promise is resolved
@@ -718,7 +712,11 @@ Referenced from https://stackoverflow.com/questions/23772801/basic-javascript-pr
 			// 2.2.4 onFulfilled/onRejected must be called asynchronously
 			setTimeout(function() {
 				// 2.2.6.1, 2.2.6.2 traverse in order, 2.2.2.3, 2.2.3.3 called only once
-				promise.consumers.splice(0).forEach(function(consumer) {
+				//splice is wrong in nashorn8,so I must change the code here.
+				/*promise.consumers.splice(0).forEach(function(consumer) {*/
+
+				while(promise.consumers.length>0){
+					var consumer=promise.consumers.shift();
 					try {
 						var callback = consumer[callbackName];
 						// 2.2.1.1, 2.2.1.2 ignore callback if not a function, else
@@ -734,10 +732,9 @@ Referenced from https://stackoverflow.com/questions/23772801/basic-javascript-pr
 						// 2.2.7.2
 						consumer.reject(e);
 					};
-				})
+				}
 			});
 		};
-
 		// The Promise Resolution Procedure: will treat values that are thenables/promises
 		// and will eventually call either fulfill or reject/throw.
 		Promise.prototype.resolve = function(x) {
@@ -783,10 +780,6 @@ Referenced from https://stackoverflow.com/questions/23772801/basic-javascript-pr
 				// 2.3.4
 				this.fulfill(x);
 			}
-		}
-		//Add catch metod to Promise.
-		Promise.prototype.catch = function(onRejected){
-			return this.then(null, onRejected);
 		}
 		context.Promise=Promise;
 	}
