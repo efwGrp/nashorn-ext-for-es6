@@ -97,3 +97,6 @@ page.drawText("Hello World!");
 var pdfDataUri=await(pdfDoc.saveAsBase64({ dataUri: true }));
 java.lang.System.out.println(pdfDataUri);
 ```
+Try to send the pdfDataUri to the src attribute of iframe, you will see your pdf.
+![image](https://github.com/efwGrp/nashorn-ext-for-es6/assets/11293193/ccc7100f-399e-4b1d-b007-7272b5790879)
+![image](https://github.com/efwGrp/nashorn-ext-for-es6/assets/11293193/c045a1cb-69db-48c7-a2f5-03b6156dc7de)
