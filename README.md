@@ -59,7 +59,7 @@ Nashorn has 100% support for ECMAScript 5.1, but not full support for ECMAScript
 <tr><td colspan=2>clearTimeout(task)</td><td>The global clearTimeout() method cancels a timeout previously established by calling setTimeout().</td></tr>
 <tr><td colspan=2>setInterval(fn, millis)</td><td>The setInterval() method, offered on the Window and Worker interfaces, repeatedly calls a function or executes a code snippet, with a fixed time delay between each call.</td></tr>
 <tr><td colspan=2>clearInterval(task)</td><td>The global clearInterval() method cancels a timed, repeating action which was previously established by a call to setInterval(). </td></tr>
-<tr><td colspan=3>This module provides a simple Promise functionality implementation. Referenced from https://stackoverflow.com/questions/23772801/basic-javascript-promise-implementation-attempt</td></tr>
+<tr><td colspan=3>This module provides a simple Promise functionality implementation. Referenced from https://www.promisejs.org</td></tr>
 <tr><td colspan=3>Promise</td></tr>
 <tr><td colspan=2>new Promise(executor)</td><td>Creates a new Promise object. The constructor is primarily used to wrap functions that do not already support promises.</td></tr>
 <tr><td colspan=2>then(onFulfilled, onRejected)</td><td>Appends fulfillment and rejection handlers to the promise, and returns a new promise resolving to the return value of the called handler.</td></tr>
