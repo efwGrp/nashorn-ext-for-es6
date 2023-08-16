@@ -45,14 +45,14 @@ Nashorn has 100% support for ECMAScript 5.1, but not full support for ECMAScript
 <tr><td>includes</td><td>2016</td><td>The includes() method of Array instances determines whether an array includes a certain value among its entries, returning true or false as appropriate.</td></tr>
 <tr><td>flatMap</td><td>2019</td><td>The flatMap() method of Array instances returns a new array formed by applying a given callback function to each element of the array, and then flattening the result by one level. </td></tr>
 <tr><td>from</td><td>2015</td><td>The Array.from() static method creates a new, shallow-copied Array instance from an iterable or array-like object. <font color=red>nashorn15.4 is required.</font></td></tr>
-<tr><td>flat</td><td>2015</td><td>The flat() method of Array instances creates a new array with all sub-array elements concatenated into it recursively up to the specified depth. <font color=red>nashorn15.4 is required.</font></td></tr>
+<tr><td>flat</td><td>2015</td><td>The flat() method of Array instances creates a new array with all sub-array elements concatenated into it recursively up to the specified depth. <b>nashorn15.4 is required.</b></td></tr>
 <tr><td colspan=3>Object</td></tr>
 <tr><td>assign</td><td>2015</td><td>The Object.assign() static method copies all enumerable own properties from one or more source objects to a target object. It returns the modified target object.
 </td></tr>
 <tr><td>is</td><td>2015</td><td>The Object.is() static method determines whether two values are the same value.</td></tr>
 <tr><td>values</td><td>2017</td><td>The Object.values() static method returns an array of a given object's own enumerable string-keyed property values.</td></tr>
 <tr><td>getOwnPropertyDescriptors</td><td>2017</td><td>The Object.getOwnPropertyDescriptors() static method returns all own property descriptors of a given object.</td></tr>
-<tr><td>entries</td><td>2017</td><td>The Object.entries() static method returns an array of a given object's own enumerable string-keyed property key-value pairs. <font color=red>nashorn15.4 is required.</font></td></tr>
+<tr><td>entries</td><td>2017</td><td>The Object.entries() static method returns an array of a given object's own enumerable string-keyed property key-value pairs. <b>nashorn15.4 is required.</b></td></tr>
 <tr><td colspan=3>This module mimics the browser's timeout functionality.I added it to make Promise work. Idears from https://github.com/nikku/nashorn-async</td></tr>
 <tr><td colspan=3>[global]</td></tr>
 <tr><td colspan=2>setTimeout(fn, millis)</td><td>The global setTimeout() method sets a timer which executes a function or specified piece of code once the timer expires.</td></tr>
@@ -65,7 +65,7 @@ Nashorn has 100% support for ECMAScript 5.1, but not full support for ECMAScript
 <tr><td colspan=2>then(onFulfilled, onRejected)</td><td>Appends fulfillment and rejection handlers to the promise, and returns a new promise resolving to the return value of the called handler.</td></tr>
 <tr><td colspan=2>catch(onRejected)</td><td>catch metod is equival to calling Promise.prototype.then(undefined, onRejected)</td></tr>
 <tr><td colspan=3>async/await  
-These functions are similar, but not identical, to the original in ECMAScript 2015.</td></tr>
+<b>These functions are similar, but not identical, to the original in ECMAScript 2015.</b></td></tr>
 <tr><td colspan=2>async(fnc)</td><td>The async() method changes fnc to a Promise instanse and returns it.If fnc has been a Promise instanse,it will be returned without changing.</td></tr>
 <tr><td colspan=2>await(prms)</td><td>The await() method calls prms.then() method and waits till fulfill is executed, then returns the value of fulfill.</td></tr>
 </table>
