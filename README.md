@@ -83,6 +83,8 @@ var f = async(function(){
 var ret=await(f);
 java.lang.System.out.println(new Date()+" The await return value is : "+ret);
 ```
+![image](https://github.com/efwGrp/nashorn-ext-for-es6/assets/11293193/41e45afb-40e1-420a-8d53-e7fc807e7bbf)
+
 The sample to creat pdf using pdf-lib.
 Besure your nashorn is 15.4 or later. To run the sample in JDK8 will be error.
 You can download pdf-lib.min.js from https://pdf-lib.js.org/ or
@@ -99,4 +101,5 @@ java.lang.System.out.println(pdfDataUri);
 ```
 Try to send the pdfDataUri to the src attribute of iframe, you will see your pdf.
 ![image](https://github.com/efwGrp/nashorn-ext-for-es6/assets/11293193/ccc7100f-399e-4b1d-b007-7272b5790879)
-![image](https://github.com/efwGrp/nashorn-ext-for-es6/assets/11293193/c045a1cb-69db-48c7-a2f5-03b6156dc7de)
+![image](https://github.com/efwGrp/nashorn-ext-for-es6/assets/11293193/09f75d6e-0f74-45ed-b25a-1c80a06b8073)
+
