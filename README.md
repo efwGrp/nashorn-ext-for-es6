@@ -69,3 +69,17 @@ Nashorn has 100% support for ECMAScript 5.1, but not full support for ECMAScript
 <tr><td colspan=2>async(fnc)</td><td>The async() method changes fnc to a Promise instanse and returns it.If fnc has been a Promise instanse,it will be returned without changing.</td></tr>
 <tr><td colspan=2>await(prms)</td><td>The await() method calls prms.then() method and waits till fulfill is executed, then returns the value of fulfill.</td></tr>
 </table>
+
+## Samples
+The sample about async/await. It is amizing for nashorn, isn't it?
+```Javascript
+load("nashorn-ext-for-es6.js");
+var f = async(function(){
+	java.lang.System.out.println(new Date()+" The async started.");
+	return new Promise(function(resolve, reject){
+		setTimeout(function(){resolve("hello world");},1000);
+	});
+});
+var ret=await(f);
+java.lang.System.out.println(new Date()+" The await return value is : "+ret);
+```
