@@ -73,7 +73,7 @@ Nashorn has 100% support for ECMAScript 5.1, but not full support for ECMAScript
 ## Samples
 The sample about async/await. It is amizing for nashorn, isn't it?
 ```Javascript
-load("nashorn-ext-for-es6.js");
+load("nashorn-ext-for-es6.min.js");
 var f = async(function(){
 	java.lang.System.out.println(new Date()+" The async started.");
 	return new Promise(function(resolve, reject){
