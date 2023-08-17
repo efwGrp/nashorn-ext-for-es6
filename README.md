@@ -9,7 +9,7 @@ Nashorn has 100% support for ECMAScript 5.1, but not full support for ECMAScript
 <tr><td>log10</td><td>2015</td><td>The Math.log10() static method returns the base 10 logarithm of a number. </td></tr>
 <tr><td>log2</td><td>2015</td><td>The Math.log2() static method returns the base 2 logarithm of a number. </td></tr>
 <tr><td>log1p</td><td>2015</td><td>The Math.log1p() static method returns the natural logarithm (base e) of 1 + x, where x is the argument.</td></tr>
-<tr><td>expm1</td><td>2015</td><td>Math.expm1The Math.expm1() static method returns e raised to the power of a number, subtracted by 1. </td></tr>
+<tr><td>expm1</td><td>2015</td><td>The Math.expm1() static method returns e raised to the power of a number, subtracted by 1. </td></tr>
 <tr><td>sinh</td><td>2015</td><td>The Math.sinh() static method returns the hyperbolic sine of a number. </td></tr>
 <tr><td>cosh</td><td>2015</td><td>The Math.cosh() static method returns the hyperbolic cosine of a number. </td></tr>
 <tr><td>tanh</td><td>2015</td><td>The Math.tanh() static method returns the hyperbolic tangent of a number.</td></tr>
