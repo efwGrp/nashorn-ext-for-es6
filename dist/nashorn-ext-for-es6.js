@@ -617,10 +617,14 @@ Idears from https://github.com/nikku/nashorn-async
 (function(context){
 	if (context.setTimeout==null){
 		var timer = new java.util.Timer();
-		function setTimeout(fn, millis) {
+		function setTimeout(fn, millis/*,...args*/) {
+			var args=[];
+			for (var i=2; i<arguments.length; i++) {
+				args.push(arguments[i]);
+			}
 			var task = new java.util.TimerTask({
 				run: function(){
-					try {fn();}catch(e){e.printStackTrace();}
+					try {fn.apply(null,args);}catch(e){e.printStackTrace();}
 				}
 			});
 			timer.schedule(task, millis || 0);
@@ -629,10 +633,14 @@ Idears from https://github.com/nikku/nashorn-async
 		function clearTimeout(task) {
 			if(task){task.cancel();}
 		}
-		function setInterval(fn, millis) {
+		function setInterval(fn, millis/*,...args*/) {
+			var args=[];
+			for (var i=2; i<arguments.length; i++) {
+				args.push(arguments[i]);
+			}
 			var task = new java.util.TimerTask({
 				run: function() {
-					try {fn();}catch(e){e.printStackTrace();}
+					try {fn.apply(null,args);}catch(e){e.printStackTrace();}
 				}
 			});
 			timer.scheduleAtFixedRate(task, millis, millis);
@@ -646,144 +654,296 @@ Idears from https://github.com/nikku/nashorn-async
 		context.setInterval = setInterval;
 		context.clearInterval = clearInterval;
 	}
-})(this);
+})(new Function('return this')());
 ///////////////////////////////////////////////////////////////////////////////
 /**
 This module provides a simple Promise functionality implementation.
-Referenced from https://stackoverflow.com/questions/23772801/basic-javascript-promise-implementation-attempt
+Referenced from https://www.promisejs.org/
 */
 (function(context){
-	if (context.Promise==null){
-		function Promise(executor) {
-			this.state = 'pending';
-			this.value = undefined;
-			// A list of "clients" that need to be notified when a state
-			//   change event occurs. These event-consumers are the promises
-			//   that are returned by the calls to the `then` method.
-			this.consumers = [];
-			try {
-				executor(this.resolve.bind(this), this.reject.bind(this));
-			} catch(err) { // Return a rejected promise when error occurs
-				this.reject(err);
-			}
-		}
+	var PENDING = 0;
+	var FULFILLED = 1;
+	var REJECTED = 2;
+	var NESTED =3;
 
-		// 2.1.1.1: provide only two ways to transition
-		Promise.prototype.fulfill = function (value) {
-			if (this.state !== 'pending') return; // 2.1.2.1, 2.1.3.1: cannot transition anymore
-			this.state = 'fulfilled'; // 2.1.1.1: can transition
-			this.value = value; // 2.1.2.2: must have a value
-			this.broadcast();
-		}
-		//Returns a promise that is rejected with the given reason.
-		Promise.prototype.reject = function (reason) {
-			if (this.state !== 'pending') return; // 2.1.2.1, 2.1.3.1: cannot transition anymore
-			this.state = 'rejected'; // 2.1.1.1: can transition
-			this.value = reason; // 2.1.3.2: must have a reason
-			this.broadcast();
-		}
+	function noop() {}
+	var LAST_ERROR = null;
+	var IS_ERROR = {};
 
-		// A promise then method accepts two arguments:
-		Promise.prototype.then = function(onFulfilled, onRejected) {
-			var consumer = new Promise(function () {});
-			// 2.2.1.1 ignore onFulfilled if not a function
-			consumer.onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : null;
-			// 2.2.1.2 ignore onRejected if not a function
-			consumer.onRejected = typeof onRejected === 'function' ? onRejected : null;
-			// 2.2.6.1, 2.2.6.2: .then() may be called multiple times on the same promise
-			this.consumers.push(consumer);
-			// It might be that the promise was already resolved... 
-			this.broadcast();
-			// 2.2.7: .then() must return a promise
-			return consumer;
-		};
-		//catch metod is equival to calling Promise.prototype.then(undefined, onRejected)
-		Promise.prototype["catch"] = function(onRejected){
-			return this.then(null, onRejected);
+	function getThen(obj) {
+		try {
+			return obj.then;
+		} catch (ex) {
+			LAST_ERROR = ex;
+			return IS_ERROR;
 		}
-		/////////////////////////////////////
-		Promise.prototype.broadcast = function() {
-			var promise = this;
-			// 2.2.2.1, 2.2.2.2, 2.2.3.1, 2.2.3.2 called after promise is resolved
-			if (this.state === 'pending') return;
-			// 2.2.6.1, 2.2.6.2 all respective callbacks must execute
-			var callbackName = this.state == 'fulfilled' ? 'onFulfilled' : 'onRejected';
-			var resolver = this.state == 'fulfilled' ? 'resolve' : 'reject';
-			// 2.2.4 onFulfilled/onRejected must be called asynchronously
-			setTimeout(function() {
-				// 2.2.6.1, 2.2.6.2 traverse in order, 2.2.2.3, 2.2.3.3 called only once
-				//splice is wrong in nashorn8,so I must change the code here.
-				/*promise.consumers.splice(0).forEach(function(consumer) {*/
-
-				while(promise.consumers.length>0){
-					var consumer=promise.consumers.shift();
-					try {
-						var callback = consumer[callbackName];
-						// 2.2.1.1, 2.2.1.2 ignore callback if not a function, else
-						// 2.2.5 call callback as plain function without context
-						if (callback) {
-							// 2.2.7.1. execute the Promise Resolution Procedure:
-							consumer.resolve(callback(promise.value)); 
-						} else {
-							// 2.2.7.3 resolve in same way as current promise
-							consumer[resolver](promise.value);
-						}
-					} catch (e) {
-						// 2.2.7.2
-						consumer.reject(e);
-					};
-				}
-			});
-		};
-		// The Promise Resolution Procedure: will treat values that are thenables/promises
-		// and will eventually call either fulfill or reject/throw.
-		Promise.prototype.resolve = function(x) {
-			var wasCalled, then;
-			// 2.3.1
-			if (this === x) {
-				throw new TypeError('Circular reference: promise value is promise itself');
-			}
-			// 2.3.2
-			if (x instanceof Promise) {
-				// 2.3.2.1, 2.3.2.2, 2.3.2.3
-				x.then(this.resolve.bind(this), this.reject.bind(this));
-			} else if (x === Object(x)) { // 2.3.3
-				try {
-					// 2.3.3.1
-					then = x.then;
-					if (typeof then === 'function') {
-						// 2.3.3.3
-						then.call(x, function resolve(y) {
-							// 2.3.3.3.3 don't allow multiple calls
-							if (wasCalled) return;
-							wasCalled = true;
-							// 2.3.3.3.1 recurse
-							this.resolve(y);
-						}.bind(this), function reject(reasonY) {
-							// 2.3.3.3.3 don't allow multiple calls
-							if (wasCalled) return;
-							wasCalled = true;
-							// 2.3.3.3.2
-							this.reject(reasonY);
-						}.bind(this));
-					} else {
-						// 2.3.3.4
-						this.fulfill(x);
-					}
-				} catch(e) {
-					// 2.3.3.3.4.1 ignore if call was made
-					if (wasCalled) return;
-					// 2.3.3.2 or 2.3.3.3.4.2
-					this.reject(e);
-				}
-			} else {
-				// 2.3.4
-				this.fulfill(x);
-			}
-		}
-		context.Promise=Promise;
 	}
-})(this);
+
+	function tryCallOne(fn, a) {
+		try {
+			return fn(a);
+		} catch (ex) {
+			LAST_ERROR = ex;
+			return IS_ERROR;
+		}
+	}
+
+	function tryCallTwo(fn, a, b) {
+		try {
+			fn(a, b);
+		} catch (ex) {
+			LAST_ERROR = ex;
+			return IS_ERROR;
+		}
+	}
+
+	/**
+	The Promise() constructor creates Promise objects. 
+	It is primarily used to wrap callback-based APIs that do not already support promises.
+	*/
+	function Promise(fn) {
+		this._to_cheat_the_checker_of_pdfmake="native code";//to cheat the checker of pdfmake
+		if (typeof this !== "object") {
+			throw new TypeError("Promises must be constructed via new");
+		}
+		if (typeof fn !== "function") {
+			throw new TypeError("not a function");
+		}
+		// store state which can be PENDING, FULFILLED or REJECTED
+		this.state = PENDING;
+		// store value or error once FULFILLED or REJECTED
+		this.value = null;
+		// store sucess & failure handlers attached by calling .then or .done
+		this.handlers = [];
+		if (fn === noop) return;
+		doResolve(fn, this);
+	}
+	/**
+	The then() method of Promise instances takes up to two arguments: 
+	callback functions for the fulfilled and rejected cases of the Promise. 
+	It immediately returns an equivalent Promise object, 
+	allowing you to chain calls to other promise methods.
+	*/
+	Promise.prototype.then = function(onFulfilled, onRejected) {
+		if (this.constructor !== Promise) {
+			return safeThen(this, onFulfilled, onRejected);
+		}
+		var res = new Promise(noop);
+		handle(this, new Handler(onFulfilled, onRejected, res));
+		return res;
+	};
+
+	function safeThen(self, onFulfilled, onRejected) {
+		return new self.constructor(function(resolve, reject) {
+			var res = new Promise(noop);
+			res.then(resolve, reject);
+			handle(self, new Handler(onFulfilled, onRejected, res));
+		});
+	}
+
+	function handle(self, deferred) {
+		while (self.state === NESTED) {
+			self = self.value;
+		}
+		if (self.state === PENDING) {
+			self.handlers.push(deferred);
+			return;
+		}
+		setTimeout(function() {
+			var cb = self.state === FULFILLED ? deferred.onFulfilled : deferred.onRejected;
+			if (cb === null) {
+				if (self.state === FULFILLED) {
+					resolve(deferred.promise, self.value);
+				} else {
+					reject(deferred.promise, self.value);
+				}
+			}else{
+				var ret = tryCallOne(cb, self.value);
+				if (ret === IS_ERROR) {
+					reject(deferred.promise, LAST_ERROR);
+				} else {
+					resolve(deferred.promise, ret);
+				}
+			}
+		},0);
+	}
+
+	function resolve(self, newValue) {
+		if (newValue === self) {
+			return reject(self, new TypeError("A promise cannot be resolved with itself."));
+		}
+		if (newValue && (typeof newValue === "object" || typeof newValue === "function")) {
+			var then = getThen(newValue);
+			if (then === IS_ERROR) {
+				return reject(self, LAST_ERROR);
+			}
+			if (then === self.then && newValue instanceof Promise) {
+				self.state = NESTED;
+				self.value = newValue;
+				finale(self);
+				return;
+			} else if (typeof then === "function") {
+				doResolve(then.bind(newValue), self);
+				return;
+			}
+		}
+		self.state = FULFILLED;
+		self.value = newValue;
+		finale(self);
+	}
+
+	function reject(self, newValue) {
+		self.state = REJECTED;
+		self.value = newValue;
+		finale(self);
+	}
+
+	function finale(self) {
+		for (var i = 0; i < self.handlers.length; i++) {
+			handle(self, self.handlers[i]);
+		}
+		self.handlers = null;
+	}
+
+	function Handler(onFulfilled, onRejected, promise) {
+		this.onFulfilled = typeof onFulfilled === "function" ? onFulfilled : null;
+		this.onRejected = typeof onRejected === "function" ? onRejected : null;
+		this.promise = promise;
+	}
+
+	function doResolve(fn, promise) {
+		var done = false;
+		var res = tryCallTwo(fn, function(value) {
+			if (done) return;
+			done = true;
+			resolve(promise, value);
+		}, function(reason) {
+			if (done) return;
+			done = true;
+			reject(promise, reason);
+		});
+		if (!done && res === IS_ERROR) {
+			done = true;
+			reject(promise, LAST_ERROR);
+		}
+	}
+
+	var TRUE = valuePromise(true);
+	var FALSE = valuePromise(false);
+	var NULL = valuePromise(null);
+	var UNDEFINED = valuePromise(undefined);
+	var ZERO = valuePromise(0);
+	var EMPTYSTRING = valuePromise("");
+
+	function valuePromise(value) {
+		var p = new Promise(noop);
+		p.state = FULFILLED;
+		p.value = value;
+		return p;
+	}
+	/**
+	The Promise.resolve() static method "resolves" a given value to a Promise. 
+	If the value is a promise, that promise is returned; if the value is a thenable, 
+	Promise.resolve() will call the then() method with two callbacks it prepared; 
+	otherwise the returned promise will be fulfilled with the value.
+	*/
+	Promise.resolve = function(value) {
+		if (value instanceof Promise) return value;
+		if (value === null) return NULL;
+		if (value === undefined) return UNDEFINED;
+		if (value === true) return TRUE;
+		if (value === false) return FALSE;
+		if (value === 0) return ZERO;
+		if (value === "") return EMPTYSTRING;
+		if (typeof value === "object" || typeof value === "function") {
+			try {
+				var then = value.then;
+				if (typeof then === "function") {
+					return new Promise(then.bind(value));
+				}
+			} catch (ex) {
+				return new Promise(function(resolve, reject) {
+					reject(ex);
+				});
+			}
+		}
+		return valuePromise(value);
+	};
+	/**
+	The Promise.all() static method takes an iterable of promises as input and returns a single Promise. 
+	This returned promise fulfills when all of the input's promises fulfill 
+	(including when an empty iterable is passed), with an array of the fulfillment values. 
+	It rejects when any of the input's promises rejects, with this first rejection reason.
+	*/
+	Promise.all = function(arr) {
+		var args = Array.prototype.slice.call(arr);
+		return new Promise(function(resolve, reject) {
+			if (args.length === 0) return resolve([]);
+			var remaining = args.length;
+
+			function res(i, val) {
+				if (val && (typeof val === "object" || typeof val === "function")) {
+					if (val instanceof Promise && val.then === Promise.prototype.then) {
+						while (val.state === NESTED) {
+							val = val.value;
+						}
+						if (val.state === FULFILLED) return res(i, val.value);
+						if (val.state === REJECTED) reject(val.value);
+						val.then(function(val) {
+							res(i, val);
+						}, reject);
+						return;
+					} else {
+						var then = val.then;
+						if (typeof then === "function") {
+							var p = new Promise(then.bind(val));
+							p.then(function(val) {
+								res(i, val);
+							}, reject);
+							return;
+						}
+					}
+				}
+				args[i] = val;
+				if (--remaining === 0) {
+					resolve(args);
+				}
+			}
+			for (var i = 0; i < args.length; i++) {
+				res(i, args[i]);
+			}
+		});
+	};
+	/**
+	The Promise.reject() static method returns a Promise object that is rejected with a given reason.	
+	*/
+	Promise.reject = function(value) {
+		return new Promise(function(resolve, reject) {
+			reject(value);
+		});
+	};
+	/**
+	The Promise.race() static method takes an iterable of promises as input and returns a single Promise. 
+	This returned promise settles with the eventual state of the first promise that settles.
+	*/
+	Promise.race = function(values) {
+		return new Promise(function(resolve, reject) {
+			values.forEach(function(value) {
+				Promise.resolve(value).then(resolve, reject);
+			});
+		});
+	};
+	/**
+	The catch() method of Promise instances schedules a function to be called when the promise is rejected.
+	It immediately returns an equivalent Promise object, allowing you to chain calls to other promise methods. 
+	It is a shortcut for Promise.prototype.then(undefined, onRejected).
+	*/
+	Promise.prototype["catch"] = function(onRejected) {
+		return this.then(null, onRejected);
+	};
+	
+	context.Promise=Promise;
+})(new Function('return this')());
 ///////////////////////////////////////////////////////////////////////////////
 /**
 Now it is time to deal with async and await.
@@ -794,11 +954,15 @@ Now it is time to deal with async and await.
 		The async() method changes fnc to a Promise instanse and returns it.
 		If fnc has been a Promise instanse,it will be returned without changing.
 		*/
-		function async(fnc){
-			if (fnc instanceof Promise) return fnc;
+		function async(fnc/*,...args*/){
+			var args=[];
+			for (var i=1; i<arguments.length; i++) {
+				args.push(arguments[i]);
+			}
+			if (fnc instanceof Promise) return fnc;// if Promise object, ignore the args
 			return new Promise(function(resolve,reject){
 				try{
-					resolve(fnc());
+					resolve(fnc.apply(null,args));
 				}catch(e){
 					reject(e);
 				}
@@ -809,7 +973,9 @@ Now it is time to deal with async and await.
 		then returns the value of fulfill.
 		*/
 		function await(prms){
-			if (! prms instanceof Promise) return prms();
+			if (! prms instanceof Promise) {
+				return prms();
+			}
 			var ret;
 			var finished=false;
 			prms.then(function(v){
@@ -837,8 +1003,7 @@ Now it is time to deal with async and await.
 			);
 			threadWaiter.start();
 			threadWaiter.join();
-
-			if (prms.state == 'fulfilled'){
+			if (prms.state == 1||prms.state == 3){//FULFILLED = 1
 				return ret;
 			}else{
 				throw ret;
@@ -847,4 +1012,24 @@ Now it is time to deal with async and await.
 		context.async=async;
 		context.await=await;
 	}
-})(this);
+})(new Function('return this')());
+///////////////////////////////////////////////////////////////////////////////
+/**
+This module provides a simple window mock implementation.
+*/
+(function(context){
+	context.console={log:function(v){
+			if (typeof v =="object"){
+				java.lang.System.out.println(JSON.stringify(v));
+			}else{
+				java.lang.System.out.println(v);
+			}
+		}
+	}
+	context.navigator={
+		//to cheat the checker of pdfmake
+		userAgent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+	};
+	context.self=context;
+	context.window=context;
+})(new Function('return this')());
