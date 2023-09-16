@@ -765,7 +765,7 @@ Referenced from https://www.promisejs.org/
 					resolve(deferred.promise, ret);
 				}
 			}
-		},0);
+		},10);//wait 10ms for finale function to finish.
 	}
 
 	function resolve(self, newValue) {
