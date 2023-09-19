@@ -653,6 +653,7 @@ Idears from https://github.com/nikku/nashorn-async
 		context.clearTimeout = clearTimeout;
 		context.setInterval = setInterval;
 		context.clearInterval = clearInterval;
+		context._timer = timer;
 	}
 })(new Function('return this')());
 ///////////////////////////////////////////////////////////////////////////////
